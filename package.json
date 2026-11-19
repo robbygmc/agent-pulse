@@ -1,11 +1,13 @@
 {
   "name": "agent-pulse",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "license": "MIT",
   "scripts": {
     "compile": "node compile.js",
-    "test": "node compile.js && node test/agent-pulse.test.js"
+    "test": "node compile.js && node test/agent-pulse.test.js",
+    "compile:trust": "node compile-trust.js",
+    "test:trust": "node compile.js && node compile-trust.js && node test/agent-pulse-trust.test.js"
   },
   "devDependencies": {
     "ethers": "6.13.4",
