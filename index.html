@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Pulse — liveness registry for AI agents with an Agent ID</title>
+<meta name="description" content="Agent Pulse is an on-chain liveness and streak registry for AI agents holding an Agent ID on BNB Smart Chain. Free daily check-in, soulbound badge, no token, no owner.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1020'/%3E%3Cpath d='M3 17h6l2-5 3 10 3-14 3 12 2-3h7' fill='none' stroke='%23ff4f8b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#070a14;--panel:#0f1426;--panel2:#141a31;--line:#232b4a;--text:#eef1ff;--muted:#9aa3c7;--pink:#ff4f8b;--violet:#8b5cff;--green:#35e0a1;--amber:#ffc857}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--pink)}
+  code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  header{position:relative;overflow:hidden;border-bottom:1px solid var(--line);background:radial-gradient(1200px 500px at 80% -10%,#2a1040 0,transparent 60%),radial-gradient(900px 400px at 0% 0%,#101c45 0,transparent 60%)}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .brand{display:flex;gap:10px;align-items:center;font-weight:800;letter-spacing:.5px}
+  .brand svg{width:34px;height:34px}
+  nav .links a{color:var(--muted);text-decoration:none;margin-left:18px;font-size:14px}
+  nav .links a:hover{color:var(--text)}
+  .hero{display:grid;grid-template-columns:1.25fr .9fr;gap:40px;align-items:center;padding:42px 0 60px}
+  h1{font-size:clamp(34px,5vw,54px);line-height:1.05;margin:0 0 18px;letter-spacing:-1px}
+  h1 span{background:linear-gradient(90deg,var(--pink),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{color:var(--muted);font-size:18px;max-width:560px}
+  .pill{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 12px;margin-bottom:18px;background:#0b1020aa}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:beat 1.2s infinite}
+  @keyframes beat{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.6}}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+  .btn{border:0;border-radius:12px;padding:12px 18px;font-weight:700;font-size:15px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+  .btn.primary{background:linear-gradient(90deg,var(--pink),var(--violet));color:#fff}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .badge-card{border-radius:26px;padding:10px;background:linear-gradient(135deg,#ff4f8b55,#8b5cff55);box-shadow:0 30px 80px #000a}
+  .badge-card img{display:block;width:100%;border-radius:20px}
+  .ecg{position:absolute;left:0;right:0;bottom:0;height:60px;opacity:.35;pointer-events:none}
+  .ecg path{stroke-dasharray:1400;stroke-dashoffset:1400;animation:draw 3.5s linear infinite}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  section{padding:56px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:28px;margin:0 0 8px;letter-spacing:-.5px}
+  .sub{color:var(--muted);margin:0 0 26px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .stat .k{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:1px}
+  .stat .v{font-size:32px;font-weight:800;margin-top:4px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+  .card h3{margin:0 0 6px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:15px}
+  .num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:var(--panel2);color:var(--pink);font-weight:800;margin-bottom:10px}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:1px;background:var(--panel2)}
+  tr:last-child td{border-bottom:0}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+  .status i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .on i{background:var(--green);box-shadow:0 0 8px var(--green)} .warm i{background:var(--amber)} .off i{background:#555c7a}
+  .kv{display:grid;grid-template-columns:170px 1fr;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .kv div{padding:11px 14px;border-bottom:1px solid var(--line);font-size:14px;word-break:break-all}
+  .kv div:nth-child(odd){color:var(--muted);background:var(--panel2)}
+  .kv div:nth-last-child(-n+2){border-bottom:0}
+  pre{background:#0a0e1d;border:1px solid var(--line);border-radius:14px;padding:16px;overflow:auto;font-size:13px;line-height:1.6;color:#d8ddff;white-space:pre-wrap;word-break:break-word}
+  .copy{font-size:12px;padding:4px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;margin-left:8px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  input{flex:1;min-width:240px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--text);font-size:15px}
+  .note{background:#1a1430;border:1px solid #3a2a66;border-radius:14px;padding:14px 16px;color:#d9ccff;font-size:14px}
+  .msg{margin-top:12px;font-size:14px;color:var(--muted);min-height:20px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  footer{padding:34px 0 50px;color:var(--muted);font-size:14px}
+  @media (max-width:860px){.hero,.two{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:1fr}.kv{grid-template-columns:1fr}.kv div:nth-child(odd){border-bottom:0;padding-bottom:2px}nav .links{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand">
+        <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0b1020"/><path d="M3 17h6l2-5 3 10 3-14 3 12 2-3h7" fill="none" stroke="#ff4f8b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        AGENT PULSE
+      </div>
+      <div class="links"><a href="#live">Live</a><a href="#how">How it works</a><a href="#agents">For agents</a><a href="#services">For services</a><a href="#contract">Contract</a></div>
+    </nav>
+    <div class="hero">
+      <div>
+        <div class="pill"><span class="dot"></span> Live on BNB Smart Chain · Agent ID holders only</div>
+        <h1>Is your agent <span>still alive?</span></h1>
+        <p class="lead">Agent Pulse is an on-chain liveness and streak registry for AI agents. Every agent with an Agent ID can pulse once a day. Anyone, human or contract, can then check whether an agent is active and how reliable it has been.</p>
+        <div class="cta">
+          <button class="btn primary" id="pulseBtn">Pulse with browser wallet</button>
+          <a class="btn ghost" href="#agents">Let my agent pulse</a>
+        </div>
+        <p class="msg" id="pulseMsg"></p>
+      </div>
+      <div class="badge-card"><img id="heroBadge" alt="Agent Pulse soulbound badge, generated on-chain" src="badge-sample.svg"></div>
+    </div>
+  </div>
+  <svg class="ecg" viewBox="0 0 1400 60" preserveAspectRatio="none"><path d="M0 35h420l25-18 30 30 30-42 30 40 20-10h845" fill="none" stroke="#ff4f8b" stroke-width="2"/></svg>
+</header>
+
+<main>
+<section id="live">
+  <div class="wrap">
+    <h2>Live from the chain</h2>
+    <p class="sub">Read straight from the contract over a public BSC RPC. No backend, no database.</p>
+    <div class="stats">
+      <div class="stat"><div class="k">Agents registered</div><div class="v" id="sAgents">…</div></div>
+      <div class="stat"><div class="k">Total pulses</div><div class="v" id="sPulses">…</div></div>
+      <div class="stat"><div class="k">Alive today</div><div class="v" id="sToday">…</div></div>
+      <div class="stat"><div class="k">Longest streak</div><div class="v" id="sBest">…</div></div>
+    </div>
+    <h3 style="margin:34px 0 12px">Streak leaderboard</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>#</th><th>Agent wallet</th><th>Status</th><th>Streak</th><th>Best</th><th>Pulses</th><th>Badge</th></tr></thead>
+      <tbody id="board"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+    </table>
+    </div>
+    <p class="msg" id="boardMsg"></p>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="sub">Agent ID tells you who an agent is. Agent Pulse tells you whether it is still around.</p>
+    <div class="grid3">
+      <div class="card"><div class="num">1</div><h3>Agent ID gate</h3><p>Only addresses holding a Binance Agent ID (the non-transferable <code>name.ai</code> identity) can pulse. The contract checks <code>balanceOf</code> on the Agent ID registry on every call.</p></div>
+      <div class="card"><div class="num">2</div><h3>One pulse per UTC day</h3><p>Each pulse records the day, extends the streak if the agent pulsed yesterday, or resets it to 1 after a gap. Best streak and lifetime pulses are kept forever.</p></div>
+      <div class="card"><div class="num">3</div><h3>Soulbound badge</h3><p>The first pulse mints a free, non-transferable (ERC-5192) badge. Its artwork is drawn on-chain from the live stats, so the badge always shows the agent's real streak.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="agents">
+  <div class="wrap two">
+    <div>
+      <h2>For agents</h2>
+      <p class="sub">Tell your own agent to pulse once a day. It is a plain contract call with <b>value 0</b>. Your wallet still shows you the transaction and you confirm it as usual.</p>
+      <div class="kv">
+        <div>Chain</div><div>BNB Smart Chain (chain id 56)</div>
+        <div>Contract</div><div class="mono"><span id="addr1"></span><button class="copy" data-copy="addr">copy</button></div>
+        <div>Function</div><div class="mono">checkIn()</div>
+        <div>Selector / calldata</div><div class="mono">0x183ff085<button class="copy" data-copy="0x183ff085">copy</button></div>
+        <div>Value</div><div class="mono">0</div>
+        <div>Cost</div><div>Network gas only (about 0.00002 BNB). No fee, no approval.</div>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-top:6px">Example instruction to your agent</h3>
+<pre id="prompt">Once per UTC day, make this contract call
+on BNB Smart Chain (chain id 56):
+  to:    {ADDR}
+  data:  0x183ff085  (checkIn())
+  value: 0
+Preview it first. Only send it if the preview
+shows value 0 and no token approvals.
+If it reverts with AlreadyPulsedToday,
+skip until the next UTC day.</pre>
+      <button class="copy" data-copy="prompt" style="margin:0">copy instruction</button>
+      <p class="note" style="margin-top:16px">Agent Pulse is free. There is no token, no airdrop and no reward of any kind. It is a public liveness record, nothing more.</p>
+    </div>
+  </div>
+</section>
+
+<section id="services">
+  <div class="wrap two">
+    <div>
+      <h2>For services</h2>
+      <p class="sub">Gate features on agents that are actually alive. One view call from your contract or backend:</p>
+<pre>interface IAgentPulse {
+  // true if `agent` pulsed within the last `withinDays` UTC days
+  function isActive(address agent, uint256 withinDays) external view returns (bool);
+  function pulseOf(address agent) external view returns (
+    uint256 badgeId, uint256 lastDay, uint256 streak,
+    uint256 bestStreak, uint256 checkIns, bool pulsedToday);
+}
+
+// e.g. only serve agents that were alive in the last 7 days
+require(IAgentPulse(PULSE).isActive(msg.sender, 7), "agent inactive");</pre>
+      <p class="sub" style="margin-top:14px">Ideas: rate-limit tiers for APIs, allowlists that expire on their own, reputation for agent marketplaces, x402 services that only trust live agents.</p>
+    </div>
+    <div>
+      <h3 style="margin-top:6px">Check an address</h3>
+      <div class="row"><input id="lookup" placeholder="0x… wallet address" spellcheck="false"><button class="btn ghost" id="lookupBtn">Check</button></div>
+      <div id="lookupOut" class="msg"></div>
+    </div>
+  </div>
+</section>
+
+<section id="contract">
+  <div class="wrap">
+    <h2>Contract &amp; safety</h2>
+    <p class="sub">Small, immutable, open source.</p>
+    <div class="kv">
+      <div>Agent Pulse</div><div class="mono"><a id="addrLink" target="_blank" rel="noopener"></a></div>
+      <div>Agent ID registry</div><div class="mono">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</div>
+      <div>Owner permissions</div><div><b>None.</b> No owner, no admin, no pause, no upgrade, no mint authority, no payable function, no withdraw.</div>
+      <div>Assets</div><div>Never holds, moves or approves any user asset.</div>
+      <div>Sign-in</div><div>No QR login, no pairing codes, no stored sessions. Pulse from your own wallet or agent.</div>
+      <div>Source</div><div><a href="https://github.com/robbygmc/agent-pulse" target="_blank" rel="noopener">github.com/robbygmc/agent-pulse</a> · MIT license</div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">Agent Pulse is an independent open-source project built for the Agent ID Hackathon. It is not affiliated with or endorsed by any exchange. No token, no returns, no rewards. Use at your own risk.</div>
+</footer>
+
+<script>
+const CONTRACT = "0xF8a1b21506290693a4b7245702488dd2f885600a";
+const RPCS = ["https://bsc-dataseed.bnbchain.org","https://bsc-rpc.publicnode.com","https://bsc.drpc.org","https://bsc-dataseed1.defibit.io"];
+const SEL = {totalAgents:"0xc5053712",totalCheckIns:"0xa563eaa3",today:"0xb74e452b",ownerOf:"0x6352211e",pulseOf:"0x6e7cb822",checkIn:"0x183ff085"};
+const ERR = {"0xea11784e":"This address does not hold an Agent ID.","0x88797a39":"Already pulsed today. Come back after 00:00 UTC.","0x7238a9a4":"No such badge."};
+const $ = (id) => document.getElementById(id);
+const short = (a) => a.slice(0,6) + "…" + a.slice(-4);
+const pad = (h) => h.replace(/^0x/,"").padStart(64,"0");
+let rpcIdx = 0;
+
+async function rpc(method, params){
+  for (let n = 0; n < RPCS.length; n++){
+    const url = RPCS[(rpcIdx + n) % RPCS.length];
+    try{
+      const r = await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params})});
+      const j = await r.json();
+      if (j.error) { if (j.error.data !== undefined || /revert/i.test(j.error.message||"")) throw Object.assign(new Error(j.error.message),{rpcData:j.error.data,revert:true}); throw new Error(j.error.message); }
+      rpcIdx = (rpcIdx + n) % RPCS.length;
+      return j.result;
+    }catch(e){ if (e.revert) throw e; }
+  }
+  throw new Error("All public RPCs failed");
+}
+const call = (data) => rpc("eth_call",[{to:CONTRACT,data},"latest"]);
+const words = (hex) => hex.replace(/^0x/,"").match(/.{64}/g) || [];
+const toNum = (w) => Number(BigInt("0x"+w));
+
+async function pulseOf(addr){
+  const w = words(await call(SEL.pulseOf + pad(addr.toLowerCase())));
+  return {badgeId:toNum(w[0]), lastDay:toNum(w[1]), streak:toNum(w[2]), best:toNum(w[3]), pulses:toNum(w[4]), today:toNum(w[5])===1};
+}
+
+function statusCell(p, today){
+  if (p.today) return '<span class="status on"><i></i>alive today</span>';
+  if (today - p.lastDay === 1) return '<span class="status warm"><i></i>yesterday</span>';
+  return '<span class="status off"><i></i>' + (today - p.lastDay) + 'd ago</span>';
+}
+
+async function loadLive(){
+  try{
+    const [a,c,d] = await Promise.all([call(SEL.totalAgents),call(SEL.totalCheckIns),call(SEL.today)]);
+    const n = toNum(words(a)[0]), total = toNum(words(c)[0]), today = toNum(words(d)[0]);
+    $("sAgents").textContent = n; $("sPulses").textContent = total;
+    const max = Math.min(n, 500), rows = [];
+    for (let i = 1; i <= max; i += 20){
+      const ids = []; for (let k = i; k < i+20 && k <= max; k++) ids.push(k);
+      const part = await Promise.all(ids.map(async (id) => {
+        const owner = "0x" + words(await call(SEL.ownerOf + pad(id.toString(16))))[0].slice(24);
+        return {id, owner, ...(await pulseOf(owner))};
+      }));
+      rows.push(...part);
+    }
+    $("sToday").textContent = rows.filter(r => r.today).length;
+    $("sBest").textContent = rows.reduce((m,r) => Math.max(m,r.best),0) + (rows.length ? "d" : "");
+    rows.sort((x,y) => y.streak - x.streak || y.best - x.best || y.pulses - x.pulses || x.id - y.id);
+    $("board").innerHTML = rows.length ? rows.slice(0,50).map((r,i) =>
+      `<tr><td>${i+1}</td><td class="mono"><a href="https://bscscan.com/address/${r.owner}" target="_blank" rel="noopener">${short(r.owner)}</a></td><td>${statusCell(r,today)}</td><td><b>${r.streak}</b></td><td>${r.best}</td><td>${r.pulses}</td><td>#${r.id}</td></tr>`).join("")
+      : '<tr><td colspan="7" style="color:var(--muted)">No agents yet. Be the first to pulse.</td></tr>';
+    $("boardMsg").textContent = "Updated " + new Date().toLocaleTimeString() + (n > max ? ` · showing the first ${max} badges` : "");
+  }catch(e){ $("boardMsg").textContent = "Could not reach a public BSC RPC right now (" + e.message + "). Try again in a moment."; }
+}
+
+async function heroBadge(){
+  try{
+    const hex = await call("0xc87b56dd" + pad("1"));
+    const w = hex.replace(/^0x/,""); const len = parseInt(w.slice(64,128),16);
+    const str = new TextDecoder().decode(Uint8Array.from(w.slice(128,128+len*2).match(/.{2}/g).map(h=>parseInt(h,16))));
+    const json = JSON.parse(atob(str.split(",")[1]));
+    $("heroBadge").src = json.image;
+  }catch(e){}
+}
+
+async function lookup(){
+  const a = $("lookup").value.trim(), out = $("lookupOut");
+  if (!/^0x[0-9a-fA-F]{40}$/.test(a)) { out.textContent = "Enter a 0x address (40 hex characters)."; return; }
+  out.textContent = "Checking…";
+  try{
+    const p = await pulseOf(a); const today = toNum(words(await call(SEL.today))[0]);
+    if (!p.pulses) { out.innerHTML = "This address has never pulsed."; return; }
+    out.innerHTML = `${statusCell(p,today)} · streak <b>${p.streak}</b> · best ${p.best} · ${p.pulses} pulses · badge #${p.badgeId}`;
+  }catch(e){ out.textContent = "Lookup failed: " + e.message; }
+}
+
+async function pulseWithWallet(){
+  const msg = $("pulseMsg"), eth = window.ethereum;
+  if (!eth) { msg.textContent = "No browser wallet found. Use the agent instructions below instead."; return; }
+  try{
+    $("pulseBtn").disabled = true;
+    const [from] = await eth.request({method:"eth_requestAccounts"});
+    const chain = await eth.request({method:"eth_chainId"});
+    if (chain !== "0x38") await eth.request({method:"wallet_switchEthereumChain",params:[{chainId:"0x38"}]});
+    try{ await rpc("eth_call",[{from,to:CONTRACT,data:SEL.checkIn},"latest"]); }
+    catch(e){ const d = typeof e.rpcData === "string" ? e.rpcData.slice(0,10) : ""; msg.textContent = ERR[d] || ("This pulse would fail: " + e.message); return; }
+    msg.textContent = "Confirm the transaction in your wallet (value 0)…";
+    const hash = await eth.request({method:"eth_sendTransaction",params:[{from,to:CONTRACT,data:SEL.checkIn,value:"0x0"}]});
+    msg.innerHTML = `Sent. <a href="https://bscscan.com/tx/${hash}" target="_blank" rel="noopener">View on BscScan</a>. Stats refresh shortly.`;
+    setTimeout(loadLive, 8000);
+  }catch(e){ msg.textContent = e.message || String(e); }
+  finally{ $("pulseBtn").disabled = false; }
+}
+
+$("addr1").textContent = CONTRACT;
+$("addrLink").textContent = CONTRACT; $("addrLink").href = "https://bscscan.com/address/" + CONTRACT;
+$("prompt").textContent = $("prompt").textContent.replace("{ADDR}", CONTRACT);
+document.querySelectorAll(".copy").forEach(b => b.onclick = () => {
+  const v = b.dataset.copy; const text = v === "addr" ? CONTRACT : v === "prompt" ? $("prompt").textContent : v;
+  navigator.clipboard.writeText(text).then(() => { const t = b.textContent; b.textContent = "copied"; setTimeout(() => b.textContent = t, 1200); });
+});
+$("lookupBtn").onclick = lookup;
+$("pulseBtn").onclick = pulseWithWallet;
+loadLive(); heroBadge(); setInterval(loadLive, 60000);
+</script>
+</body>
+</html>
